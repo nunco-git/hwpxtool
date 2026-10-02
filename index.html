@@ -133,6 +133,14 @@
   .tool-panel iframe { flex: 1; width: 100%; height: 100%; min-height: 640px; border: none; background: white; }
   .tool-panel-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 40px; }
 
+  /* 도구를 고르면 상단 소개 영역을 접고 초기화 버튼만 남김 */
+  .reset-bar { display: none; justify-content: flex-end; margin-bottom: 10px; }
+  .btn-reset { border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px; padding: 5px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-reset:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .main-content.compact { padding-top: 14px; }
+  .main-content.compact .top-section { display: none; }
+  .main-content.compact .reset-bar { display: flex; }
+  .main-content.compact .tool-panel iframe { min-height: calc(100vh - 130px); }
   @media (max-width: 1180px) {
     .app-container { display: flex; flex-direction: column; align-items: center; }
     .main-content { min-height: auto; }
@@ -150,6 +158,7 @@
 
 <div class="app-container">
   <div class="main-content">
+    <div class="reset-bar"><button type="button" class="btn-reset" id="btn-reset" title="처음 화면으로 되돌립니다">🔄 초기화</button></div>
     <div class="top-section">
       <div class="top-col-title">
         <div class="title-icon">🧰</div>
@@ -297,15 +306,17 @@ function renderList() {
           '<span class="tool-name">' + tool.name + '</span>' +
         '</span>';
       item.title = tool.desc;
-      item.addEventListener("click", () => openTool(tool.id));
+      item.addEventListener("click", () => openTool(tool.id, true));
       toolItemsEl.appendChild(item);
     });
   });
 }
 
-function openTool(id) {
+const mainEl = document.querySelector(".main-content");
+function openTool(id, fromUser) {
   const tool = TOOLS.find(t => t.id === id);
   if (!tool) return;
+  if (fromUser) mainEl.classList.add("compact");
   activeId = id;
   renderList();
   const html = b64ToUtf8(tool.b64);
@@ -317,6 +328,13 @@ function openTool(id) {
 renderList();
 // 처음에는 목록의 첫 번째 도구를 바로 열어 보여줍니다.
 if (TOOLS.length > 0) openTool(TOOLS[0].id);
+// 초기화: 상단 소개 영역을 다시 펼치고 처음 상태(첫 도구, 입력 내용 초기화)로 되돌림
+document.getElementById("btn-reset").addEventListener("click", () => {
+  mainEl.classList.remove("compact");
+  frameEl.srcdoc = "";
+  if (TOOLS.length > 0) openTool(TOOLS[0].id);
+  window.scrollTo(0, 0);
+});
 </script>
 
 </body>
