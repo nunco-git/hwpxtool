@@ -22,15 +22,15 @@
                 box-shadow 0.18s ease, transform 0.12s ease;
   }
   button:active { transform: scale(0.96); }
-  body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 24px; color: #334155; }
+  body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 10px; color: #334155; }
 
   .app-container {
     display: grid;
     grid-template-columns: 1fr;
     gap: 30px;
-    max-width: 1900px;
+    max-width: none;
     width: 100%;
-    margin: 0 auto;
+    margin: 0;
     align-items: start;
     animation: app-fade-in 0.4s ease;
   }
@@ -45,7 +45,7 @@
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 32px;
+    padding: 16px 18px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
@@ -134,13 +134,28 @@
   .tool-panel-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 40px; }
 
   /* 도구를 고르면 상단 소개 영역을 접고 초기화 버튼만 남김 */
-  .reset-bar { display: none; justify-content: flex-end; margin-bottom: 10px; }
+  .reset-bar { display: flex; justify-content: flex-start; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .dd { position: relative; }
+  .dd-btn { border: 1px solid #93c5fd; background: #eff6ff; color: #1d4ed8; border-radius: 999px; padding: 5px 16px; font-size: 0.85rem; font-weight: 800; cursor: pointer; font-family: inherit; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dd-btn:hover, .dd-btn[aria-expanded="true"] { background: #dbeafe; border-color: #3b82f6; }
+  .dd-menu { position: absolute; left: 0; top: calc(100% + 6px); min-width: 230px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,0.16); padding: 6px; z-index: 100; }
+  .dd-menu[hidden] { display: none; }
+  .dd-cat { position: relative; }
+  .dd-cat-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; color: #0f172a; cursor: pointer; user-select: none; }
+  .dd-cat-row .arrow { margin-left: auto; color: #94a3b8; font-size: 0.8rem; }
+  .dd-cat.open > .dd-cat-row, .dd-cat-row:hover { background: #eff6ff; color: #1d4ed8; }
+  .dd-cat.has-active > .dd-cat-row { box-shadow: inset 3px 0 0 #3b82f6; }
+  .dd-sub { display: none; position: absolute; left: calc(100% + 4px); top: -6px; min-width: 260px; max-width: 360px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,0.16); padding: 6px; z-index: 101; }
+  .dd-cat.open > .dd-sub { display: block; }
+  .dd-tool { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; color: #1e293b; cursor: pointer; }
+  .dd-tool:hover { background: #eff6ff; color: #1d4ed8; }
+  .dd-tool.active { background: #dbeafe; color: #1d4ed8; }
+  .dd-tool .tool-icon { font-size: 1.2rem; flex-shrink: 0; }
   .btn-reset { border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 999px; padding: 5px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: inherit; }
   .btn-reset:hover { background: #f1f5f9; border-color: #94a3b8; }
   .main-content.compact { padding-top: 14px; }
   .main-content.compact .top-section { display: none; }
-  .main-content.compact .reset-bar { display: flex; }
-  .main-content.compact .tool-panel iframe { min-height: calc(100vh - 130px); }
+  .main-content.compact .tool-panel iframe { min-height: calc(100vh - 100px); }
   @media (max-width: 1180px) {
     .app-container { display: flex; flex-direction: column; align-items: center; }
     .main-content { min-height: auto; }
@@ -149,7 +164,7 @@
   }
   @media (max-width: 900px) {
     .tool-layout { flex-direction: column; }
-    .tool-list-container { order: 0; flex-basis: auto; width: 100%; }
+    .dd-sub { position: static; box-shadow: none; border: 0; border-left: 2px solid #dbeafe; border-radius: 0; margin: 2px 0 4px 14px; min-width: 0; padding: 2px 0 2px 4px; }
     .tool-panel iframe { min-height: 520px; }
   }
 </style>
@@ -158,7 +173,13 @@
 
 <div class="app-container">
   <div class="main-content">
-    <div class="reset-bar"><button type="button" class="btn-reset" id="btn-reset" title="처음 화면으로 되돌립니다">🔄 초기화</button></div>
+    <div class="reset-bar">
+      <div class="dd" id="dd">
+        <button type="button" class="dd-btn" id="dd-btn" aria-haspopup="true" aria-expanded="false" title="도구 목록">🧰 <span id="dd-label">도구 목록</span> ▾</button>
+        <div class="dd-menu" id="dd-menu" hidden></div>
+      </div>
+      <button type="button" class="btn-reset" id="btn-reset" title="처음 화면으로 되돌립니다">🔄 초기화</button>
+    </div>
     <div class="top-section">
       <div class="top-col-title">
         <div class="title-icon">🧰</div>
@@ -173,7 +194,7 @@
           </div>
           <ul class="security-features">
             <li><span class="feat-icon">🌐</span><span><strong>외부 서버 전송 ZERO</strong> <span class="feat-desc">: 파일이 외부로 전송되지 않고 브라우저 안에서만 처리</span></span></li>
-            <li><span class="feat-icon">🧩</span><span><strong>도구 모음</strong> <span class="feat-desc">: 오른쪽 목록에서 원하는 도구를 고르면 바로 왼쪽 화면에서 실행</span></span></li>
+            <li><span class="feat-icon">🧩</span><span><strong>도구 모음</strong> <span class="feat-desc">: 맨 위 도구 목록 메뉴에서 원하는 도구를 고르면 바로 아래 화면에서 실행</span></span></li>
             <li><span class="feat-icon">➕</span><span><strong>계속 추가 예정</strong> <span class="feat-desc">: 한글 문서 작업을 도와주는 도구를 이곳에 하나씩 더해갈 예정</span></span></li>
           </ul>
         </div>
@@ -181,16 +202,8 @@
     </div>
 
     <div class="tool-layout">
-      <div class="tool-list-container" id="tool-list">
-        <h3 class="tool-list-title">🧰 도구 목록</h3>
-        <p class="tool-list-hint">도구를 클릭하면 왼쪽 화면에서 바로 실행됩니다.</p>
-        <!-- 도구 항목들은 TOOLS 배열로부터 스크립트가 자동 생성합니다 -->
-        <div id="tool-items"></div>
-        <div class="tool-item-placeholder">➕ 더 많은 도구가 곧 추가될 예정입니다.</div>
-      </div>
-
       <div class="tool-panel" id="tool-panel">
-        <div class="tool-panel-empty" id="tool-panel-empty">오른쪽 목록에서 도구를 선택하세요.</div>
+        <div class="tool-panel-empty" id="tool-panel-empty">위쪽 [도구 목록] 메뉴에서 도구를 선택하세요.</div>
         <iframe id="tool-frame" style="display:none;" allow="local-fonts; clipboard-write"></iframe>
       </div>
     </div>
@@ -276,7 +289,7 @@ function b64ToUtf8(b64) {
   return new TextDecoder("utf-8").decode(bytes);
 }
 
-const toolItemsEl = document.getElementById("tool-items");
+const ddEl = document.getElementById("dd"), ddBtn = document.getElementById("dd-btn"), ddMenu = document.getElementById("dd-menu"), ddLabel = document.getElementById("dd-label");
 const frameEl = document.getElementById("tool-frame");
 const emptyEl = document.getElementById("tool-panel-empty");
 
@@ -288,29 +301,52 @@ const CATEGORIES = [
   { id: "edit", label: "✏️ 문서 편집 도구" },
 ];
 
+function closeMenu() {
+  ddMenu.hidden = true; ddBtn.setAttribute("aria-expanded", "false");
+  ddMenu.querySelectorAll(".dd-cat.open").forEach(c => c.classList.remove("open"));
+}
 function renderList() {
-  toolItemsEl.innerHTML = "";
+  ddMenu.innerHTML = "";
+  const act = TOOLS.find(t => t.id === activeId);
+  ddLabel.textContent = act ? act.icon + " " + act.name : "도구 목록";
   CATEGORIES.forEach(cat => {
     const tools = TOOLS.filter(t => (t.category || "edit") === cat.id);
     if (!tools.length) return;
-    const head = document.createElement("div");
-    head.className = "tool-cat-title";
-    head.textContent = cat.label;
-    toolItemsEl.appendChild(head);
-    tools.forEach(tool => {
-      const item = document.createElement("div");
-      item.className = "tool-item" + (tool.id === activeId ? " active" : "");
-      item.innerHTML =
-        '<span class="tool-icon">' + tool.icon + '</span>' +
-        '<span class="tool-info">' +
-          '<span class="tool-name">' + tool.name + '</span>' +
-        '</span>';
-      item.title = tool.desc;
-      item.addEventListener("click", () => openTool(tool.id, true));
-      toolItemsEl.appendChild(item);
-    });
+    const box = document.createElement("div");
+    box.className = "dd-cat" + (tools.some(t => t.id === activeId) ? " has-active" : "");
+    const row = document.createElement("div");
+    row.className = "dd-cat-row";
+    row.innerHTML = '<span>' + cat.label + '</span>' + (tools.length > 1 ? '<span class="arrow">▶</span>' : '');
+    box.appendChild(row);
+    if (tools.length === 1) {
+      row.addEventListener("click", () => { closeMenu(); openTool(tools[0].id, true); });
+      row.title = tools[0].desc;
+    } else {
+      const sub = document.createElement("div");
+      sub.className = "dd-sub";
+      tools.forEach(tool => {
+        const item = document.createElement("div");
+        item.className = "dd-tool" + (tool.id === activeId ? " active" : "");
+        item.innerHTML = '<span class="tool-icon">' + tool.icon + '</span><span class="tool-name">' + tool.name + '</span>';
+        item.title = tool.desc;
+        item.addEventListener("click", e => { e.stopPropagation(); closeMenu(); openTool(tool.id, true); });
+        sub.appendChild(item);
+      });
+      box.appendChild(sub);
+      const openSub = () => { ddMenu.querySelectorAll(".dd-cat.open").forEach(c => { if (c !== box) c.classList.remove("open"); }); box.classList.add("open"); };
+      row.addEventListener("click", () => box.classList.contains("open") ? box.classList.remove("open") : openSub());
+      box.addEventListener("mouseenter", openSub);
+    }
+    ddMenu.appendChild(box);
   });
 }
+ddBtn.addEventListener("click", () => {
+  const willOpen = ddMenu.hidden;
+  closeMenu();
+  if (willOpen) { ddMenu.hidden = false; ddBtn.setAttribute("aria-expanded", "true"); }
+});
+document.addEventListener("click", e => { if (!ddEl.contains(e.target)) closeMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
 
 const mainEl = document.querySelector(".main-content");
 function openTool(id, fromUser) {
