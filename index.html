@@ -339,6 +339,11 @@
 .wl.nh .wl-nav{display:none}
 @media (max-width:760px){#lp-toc{width:auto;flex:0 0 auto}.wl{flex-direction:column}.wl-nav{position:static;flex:0 0 auto;max-height:26vh;width:100%;box-sizing:border-box}}
 .e-lab{font-size:.74rem;color:#1d4ed8;margin-top:2px;word-break:keep-all}
+.lp-bpc{white-space:pre;font-family:"D2Coding","Noto Sans Mono CJK KR","Malgun Gothic",monospace;font-size:.78rem;line-height:1.45}
+.bp-pdfbtn{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.8rem;font-weight:700;cursor:pointer;margin-right:6px}
+.bp-pdfbox{margin:6px 0;background:#e2e8f0;border-radius:6px;padding:6px;max-height:80vh;overflow:auto}
+.bp-pg{display:block;width:100%;height:auto;margin:0 auto 8px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.bp-txt summary{cursor:pointer;font-size:.78rem;color:#64748b;margin:4px 0}
 </style>
 </head>
 <body>
@@ -796,10 +801,39 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   function parseBp(s){var m=/(별표|서식)\s*(?:제\s*)?(\d+)\s*(?:호)?(?:\s*(?:의|-)\s*(\d+))?/.exec(String(s||""));return m?{kind:m[1],no:String(+m[2]),br:m[3]?String(+m[3]):""}:null;}
   var findBp=function(body,q){return (body.bps||[]).find(function(b){return b.no===q.no&&(b.br||"")===q.br&&(b.kind===q.kind||(q.kind==="별표"&&b.kind==="별표"));})||(body.bps||[]).find(function(b){return b.no===q.no&&(b.br||"")===q.br;});};
   var bpPlain=function(b){return (b.title+"\n"+b.content).trim();};
+  async function loadPdfjs(){
+    if(window.pdfjsLib)return window.pdfjsLib;
+    var k1="pdfjs-dist@3.11.174/build/pdf.min.js",k2="pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    [k1,k2].forEach(function(k){if(!LIBS[k])throw new Error("PDF 처리 모듈이 없습니다.");});
+    for(var k of [k1,k2])if(!LIB_URLS[k])LIB_URLS[k]=URL.createObjectURL(new Blob([await gunz(LIBS[k])],{type:"text/javascript"}));
+    await loadScript(LIB_URLS[k1]); window.pdfjsLib.GlobalWorkerOptions.workerSrc=LIB_URLS[k2]; return window.pdfjsLib;
+  }
+  async function showPdf(btn){
+    var box=btn.closest(".lp-line").nextElementSibling; if(!box||!box.classList.contains("bp-pdfbox"))return;
+    if(box.dataset.on==="1"){box.dataset.on="0";box.innerHTML="";btn.textContent="📄 PDF 원본 미리보기 (표 모양 그대로)";return;}
+    box.dataset.on="1";btn.textContent="✕ PDF 닫기";box.innerHTML='<div class="hint">PDF를 불러오는 중…</div>';
+    try{
+      var href=btn.dataset.pdf, buf=(mem.pdf=mem.pdf||{})[href];
+      if(!buf){
+        var res=await fetch(RELAY+"/file?u="+encodeURIComponent(href));
+        if(!res.ok)throw new Error(res.status===404||res.status===403?"중계 서버(Cloudflare Worker)를 새 코드로 갱신해야 PDF 미리보기를 쓸 수 있습니다. (HTTP "+res.status+")":"PDF를 받지 못했습니다. (HTTP "+res.status+")");
+        buf=await res.arrayBuffer(); if(String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,4)))!=="%PDF")throw new Error("PDF 형식이 아닌 파일입니다. 「PDF 열기」 링크로 확인하세요.");
+        mem.pdf[href]=buf;
+      }
+      var lib=await loadPdfjs(), doc=await lib.getDocument({data:new Uint8Array(buf.slice(0))}).promise, n=Math.min(doc.numPages,40);
+      box.innerHTML='<div class="hint">총 '+doc.numPages+'쪽'+(doc.numPages>n?" (앞 "+n+"쪽만 표시)":"")+"</div>";
+      for(var i=1;i<=n;i++){
+        if(box.dataset.on!=="1")return;
+        var pg=await doc.getPage(i), vp=pg.getViewport({scale:1.8}), cv=document.createElement("canvas"); cv.width=vp.width;cv.height=vp.height;cv.className="bp-pg";
+        box.appendChild(cv); await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+      }
+    }catch(e){box.innerHTML='<div class="lp-line" style="color:#b91c1c">'+esc(e.message||String(e))+"</div>";}
+  }
   function bpHtml(b){
     var h='<div class="lp-line"><b>'+esc(bpLabel(b))+(b.title?" "+esc(b.title):"")+"</b></div>";
-    if(b.links.length)h+='<div class="lp-line">'+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>";
-    if(b.content)h+='<div class="lp-line lp-bpc">'+esc(b.content)+"</div>";
+    var pdf=b.links.filter(function(l){return l.label==="PDF";})[0];
+    if(b.links.length)h+='<div class="lp-line">'+(pdf?'<button type="button" class="bp-pdfbtn" data-pdf="'+esc(pdf.href)+'">📄 PDF 원본 미리보기 (표 모양 그대로)</button> ':"")+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>"+(pdf?'<div class="bp-pdfbox"></div>':"");
+    if(b.content)h+='<details class="bp-txt"'+(b.links.some(function(l){return l.label==="PDF";})?"":" open")+'><summary>텍스트로 보기 (표가 깨질 수 있음)</summary><div class="lp-line lp-bpc">'+esc(b.content)+"</div></details>";
     else if(!b.links.length)h+='<div class="lp-line" style="color:#64748b">본문 텍스트가 제공되지 않은 별표·서식입니다. 아래 「law.go.kr에서 원문 보기」에서 확인하세요.</div>';
     return h;
   }
@@ -828,7 +862,10 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     var al=aliasStore[nsp(ctx)]||{}, ord=isOrdin(ctx);
     while((m=RE.exec(text))){
       var name,art,isBp=false,sh="",sfx="",ex=false;
-      if(m[11]){isBp=true;if(m[10]){name=m[10].trim();ex=true;}else name=ctx;art=m[11];}
+      if(m[11]){isBp=true;art=m[11];if(m[10]){name=m[10].trim();ex=true;}else{name=ctx;var gp=text.slice(lastEnd,m.index);if(lastName&&gp.length<=24&&chainRe.test(gp))name=lastName;
+        var bf=text.slice(Math.max(0,m.index-14),m.index),p1=/(?:같은\s*법(?:률)?|동법)(?:\s*(시행령|시행규칙))?\s*$/.exec(bf),p2=/(?:^|[^가-힣])(영|규칙|시행령|시행규칙|법)\s*$/.exec(bf);
+        if(p1){sfx=p1[1]||"";if(lastName)name=baseOf(lastName)+(sfx?" "+sfx:"");else if(al["법"])name=al["법"]+(sfx?" "+sfx:"");else if(ord){name=ctx;sh="법";}else name=baseOf(ctx)+(sfx?" "+sfx:"");}
+        else if(p2){var k2=p2[1],b2=baseOf(ctx);if(al[k2])name=al[k2];else if(ord){name=ctx;sh=k2;}else name=k2==="법"?b2:(/시행령|영/.test(k2)&&k2!=="시행규칙"?b2+" 시행령":b2+" 시행규칙");}}}
       else if(m[3]){art=m[3];if(m[2]){name=m[2].trim();ex=true;}else{name=ctx;var gap=text.slice(lastEnd,m.index);if(lastName&&gap.length<=24&&chainRe.test(gap))name=lastName;}}
       else if(m[4]){art=m[6];sfx=m[5]||"";
         if(lastName)name=baseOf(lastName)+(sfx?" "+sfx:"");
@@ -839,10 +876,16 @@ document.getElementById("btn-reset").addEventListener("click", () => {
         if(al[kw])name=al[kw];
         else if(ord){name=ctx;sh=kw;}
         else name=kw==="법"?(b===ctx?ctx:b):(/시행령|영/.test(kw)&&kw!=="시행규칙"?b+" 시행령":b+" 시행규칙");}
-      if(!sh&&(ex||m[4]||m[7]))lastName=name; else if(!sh&&m[3]&&name!==ctx)lastName=name;
+      if(!sh&&(ex||m[4]||m[7]||(m[11]&&name!==ctx)))lastName=name; else if(!sh&&m[3]&&name!==ctx)lastName=name;
       lastEnd=m.index+m[0].length;
-      out+=esc(text.slice(last,m.index))+'<a class="lp-ref" data-law="'+esc(name)+'" data-art="'+esc(art)+'"'+(isBp?' data-bp="1"':"")+(sh?' data-short="'+esc(sh)+'" data-sfx="'+esc(sfx)+'" data-ctx="'+esc(ctx)+'"':"")+'>'+esc(m[0])+"</a>";
+      var mkA=function(ar,label){return '<a class="lp-ref" data-law="'+esc(name)+'" data-art="'+esc(ar)+'"'+(isBp?' data-bp="1"':"")+(sh?' data-short="'+esc(sh)+'" data-sfx="'+esc(sfx)+'" data-ctx="'+esc(ctx)+'"':"")+'>'+esc(label)+"</a>";};
+      out+=esc(text.slice(last,m.index))+mkA(art,m[0]);
       last=m.index+m[0].length;
+      if(isBp){ /* "별표 5 및 9" 처럼 번호만 이어지는 표기 */
+        var cm,cre=/^(\s*(?:,|ㆍ|·|및|또는|과|와)\s*)(?:별표\s*)?(\d+)(\s*의\s*\d+)?(?!\s*(?:조|항|호|목|\d|개|명|인|%|퍼센트|년|월|일|원|건|회|㎡|m))/;
+        while((cm=cre.exec(text.slice(last)))){var nn2=cm[2]+(cm[3]||"").replace(/\s+/g,"");out+=esc(cm[1])+mkA("별표 "+nn2,cm[0].slice(cm[1].length));last+=cm[0].length;}
+        RE.lastIndex=last; lastEnd=last;
+      }
     }
     return out+esc(text.slice(last));
   }
@@ -1130,6 +1173,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       var sx=e.target.closest("[data-sel]");if(sx){sel=sx.dataset.sel;renderView();var sc=document.querySelector(".lp-scroll");if(sc)sc.scrollTop=0;}});
     $("lp-view").addEventListener("input",function(e){if(e.target.id!=="lp-tocq")return;var q=e.target.value.replace(/\s+/g,"").toLowerCase();$("lp-view").querySelectorAll(".wl-nav .toc-a").forEach(function(x){x.style.display=!q||x.textContent.replace(/\s+/g,"").toLowerCase().indexOf(q)>=0?"":"none";});});
     $("lp-view").addEventListener("click",function(e){
+      var pb=e.target.closest("[data-pdf]");if(pb){showPdf(pb);return;}
       var nt=e.target.closest("[data-navtog]");if(nt){navHide=!navHide;try{localStorage.setItem("hubLaw.navhide",navHide?"1":"0");}catch(x){}var wl=$("lp-view").querySelector(".wl");if(wl)wl.classList.toggle("nh",navHide);nt.textContent=navHide?"▶ 조문번호 보이기":"◀ 조문번호 숨기기";return;}
       var gt=e.target.closest("[data-go]");if(gt){goTo(gt.dataset.go);return;}
       var fv=e.target.closest("[data-fav]");if(fv){toggleFav(fv.dataset.fav);return;}
