@@ -346,6 +346,7 @@
 .bp-txt summary{cursor:pointer;font-size:.78rem;color:#64748b;margin:4px 0}
 .bp-diag{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:2px 9px;font-size:.74rem;cursor:pointer;margin-left:6px}
 .lp-diag{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:6px;font-size:.72rem;line-height:1.45;white-space:pre-wrap;word-break:break-all;max-height:360px;overflow:auto;user-select:text}
+.bp-htm{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px;overflow:auto;max-height:560px;font-size:.8rem}.bp-htm table{border-collapse:collapse}.bp-htm td,.bp-htm th{border:1px solid #94a3b8;padding:3px 6px}.bp-htm img{max-width:100%}
 </style>
 </head>
 <body>
@@ -784,7 +785,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
           var raw=String(b["별표번호"]!=null?b["별표번호"]:"").trim(), no=raw.replace(/^0+(?=\d)/,""), br=String(b["별표가지번호"]||"").replace(/^0+/,"");
           var kd=String(b["별표종류"]||b["별표구분"]||"별표"), links=[];
           Object.keys(b).forEach(function(k){var v=b[k];if(typeof v==="string"&&v&&!/상세/.test(k)&&!/(명|번호|종류|구분|일자|제목|내용)$/.test(k)&&/(\.do|\.pdf|\.hwp|flDownload|LSW|http)/i.test(v)&&!/^(\d|[가-힣])/.test(v)){var lb=/PDF/i.test(k+v)?"PDF":/HWP|한글/i.test(k)||/\.hwp/i.test(v)?"한글(HWP)":/이미지|image|png|jpg/i.test(k+v)?"이미지":"파일";if(!links.some(function(l){return l.href===absUrl(v);}))links.push({label:lb,href:absUrl(v)});}});
-          return {no:no,br:br,kind:(/^\s*\[?\s*별표/.test(String(b["별표명"]||""))?"별표":/^\s*\[?\s*서식/.test(String(b["별표명"]||""))?"서식":(/서식|별지/.test(kd)?"서식":"별표")),title:String(b["별표명"]||b["별표제목"]||"").replace(/\s+/g," ").trim(),content:"",links:links};
+          return {no:no,br:br,kind:(/^\s*\[?\s*별표/.test(String(b["별표명"]||""))?"별표":/^\s*\[?\s*서식/.test(String(b["별표명"]||""))?"서식":(/서식|별지/.test(kd)?"서식":"별표")),title:String(b["별표명"]||b["별표제목"]||"").replace(/\s+/g," ").trim(),content:"",links:links,bid:String(b["별표일련번호"]||"")};
         }).filter(function(b){return b.no||b.title;});
         break;
       }
@@ -852,16 +853,29 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     for(var k of [k1,k2])if(!LIB_URLS[k])LIB_URLS[k]=URL.createObjectURL(new Blob([await gunz(LIBS[k])],{type:"text/javascript"}));
     await loadScript(LIB_URLS[k1]); window.pdfjsLib.GlobalWorkerOptions.workerSrc=LIB_URLS[k2]; return window.pdfjsLib;
   }
+  async function htmlPrev(bid,box){
+    box.innerHTML='<div class="hint">PDF가 아닌 파일이라 법령센터의 화면용(HTML) 내용을 불러옵니다…</div>';
+    var res=await fetch(RELAY+"/lawService?target=ordinbyl&ID="+encodeURIComponent(bid)+"&type=HTML"); if(!res.ok)throw new Error("별표 화면(HTML)을 받지 못했습니다. (HTTP "+res.status+")");
+    var tx=await res.text(); if(/^\s*[{\[]/.test(tx)||!/<(table|p|div|img|br)/i.test(tx))throw new Error("법령센터가 이 별표의 화면용 내용을 제공하지 않습니다: "+tx.slice(0,120).replace(/\s+/g," "));
+    var doc=new DOMParser().parseFromString(tx,"text/html");
+    doc.querySelectorAll("script,style,iframe,object,embed,link,meta,form,base").forEach(function(n){n.remove();});
+    doc.querySelectorAll("*").forEach(function(n){Array.from(n.attributes).forEach(function(a){if(/^on/i.test(a.name)||(/^(href|src)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value)))n.removeAttribute(a.name);else if(/^(src|href)$/i.test(a.name)&&a.value&&!/^(https?:|data:|#)/i.test(a.value))n.setAttribute(a.name,absUrl(a.value));});if(n.tagName==="A")n.setAttribute("target","_blank");});
+    box.innerHTML='<div class="bp-htm">'+doc.body.innerHTML+"</div>";
+  }
   async function showPdf(btn){
     var box=btn.closest(".lp-line").nextElementSibling; if(!box||!box.classList.contains("bp-pdfbox"))return;
-    if(box.dataset.on==="1"){box.dataset.on="0";box.innerHTML="";btn.textContent="📄 PDF 원본 미리보기 (표 모양 그대로)";return;}
-    box.dataset.on="1";btn.textContent="✕ PDF 닫기";box.innerHTML='<div class="hint">PDF를 불러오는 중…</div>';
+    if(box.dataset.on==="1"){box.dataset.on="0";box.innerHTML="";btn.textContent="📄 미리보기 (표 모양 그대로)";return;}
+    box.dataset.on="1";btn.textContent="✕ 미리보기 닫기";box.innerHTML='<div class="hint">파일을 불러오는 중…</div>';
     try{
       var href=btn.dataset.pdf, buf=(mem.pdf=mem.pdf||{})[href];
       if(!buf){
         var res=await fetch(RELAY+"/file?u="+encodeURIComponent(href));
         if(!res.ok)throw new Error(res.status===404||res.status===403?"중계 서버(Cloudflare Worker)를 새 코드로 갱신해야 PDF 미리보기를 쓸 수 있습니다. (HTTP "+res.status+")":"PDF를 받지 못했습니다. (HTTP "+res.status+")");
-        buf=await res.arrayBuffer(); if(String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,4)))!=="%PDF")throw new Error("PDF 형식이 아닌 파일입니다. 「PDF 열기」 링크로 확인하세요.");
+        buf=await res.arrayBuffer(); if(String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,4)))!=="%PDF"){
+          var sig=Array.from(new Uint8Array(buf.slice(0,4))).map(function(x){return ("0"+x.toString(16)).slice(-2);}).join("");
+          if(btn.dataset.bid){await htmlPrev(btn.dataset.bid,box);return;}
+          throw new Error("PDF 형식이 아닌 파일입니다("+(sig==="d0cf11e0"?"한글(HWP) 파일":sig.indexOf("504b")===0?"한글(HWPX)·압축 파일":"형식 "+sig)+"). 「열기」 링크로 받아서 확인하세요.");
+        }
         mem.pdf[href]=buf;
       }
       var lib=await loadPdfjs(), doc=await lib.getDocument({data:new Uint8Array(buf.slice(0))}).promise, n=Math.min(doc.numPages,40);
@@ -876,7 +890,8 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   function bpHtml(b){
     var h='<div class="lp-line"><b>'+esc(bpLabel(b))+(b.title?" "+esc(b.title):"")+"</b></div>";
     var pdf=b.links.filter(function(l){return l.label==="PDF";})[0];
-    if(b.links.length)h+='<div class="lp-line">'+(pdf?'<button type="button" class="bp-pdfbtn" data-pdf="'+esc(pdf.href)+'">📄 PDF 원본 미리보기 (표 모양 그대로)</button> ':"")+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>"+(pdf?'<div class="bp-pdfbox"></div>':"");
+    var pv=pdf||b.links[0];
+    if(b.links.length)h+='<div class="lp-line">'+(pv?'<button type="button" class="bp-pdfbtn" data-pdf="'+esc(pv.href)+'"'+(b.bid?' data-bid="'+esc(b.bid)+'"':"")+'>📄 미리보기 (표 모양 그대로)</button> ':"")+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>"+(pv?'<div class="bp-pdfbox"></div>':"");
     if(b.content)h+='<details class="bp-txt"'+(b.links.some(function(l){return l.label==="PDF";})?"":" open")+'><summary>텍스트로 보기 (표가 깨질 수 있음)</summary><div class="lp-line lp-bpc">'+esc(b.content)+"</div></details>";
     else if(!b.links.length)h+='<div class="lp-line" style="color:#64748b">본문 텍스트가 제공되지 않은 별표·서식입니다. 아래 「law.go.kr에서 원문 보기」에서 확인하세요.</div>';
     return h;
