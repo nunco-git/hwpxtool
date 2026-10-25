@@ -363,6 +363,7 @@
 #law-pop.mh .lp-stat{display:none}
 #law-pop .lp-head>span.keep{font-size:.72rem;letter-spacing:-.04em}#law-pop .lp-head button{padding:4px 7px;font-size:.74rem}
 }
+.hero.hero3{padding:8px 12px;gap:10px}.hero3 .hero-col{padding:8px 14px}.hero3 h1{margin:6px 0 0;font-size:1.7rem}.hero3 .hero-badge{padding:3px 10px}.hero-feat{gap:5px}.hero3 .hero-etc{gap:5px}.hero3 .etc-s{min-height:0}
 </style>
 </head>
 <body>
@@ -1191,7 +1192,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
         var key=function(i){return nsp(i.name)+"|"+nsp(i.art);},seen={};ci.forEach(function(i){seen[key(i)]=1;});
         var add=items.filter(function(i){return !seen[key(i)];});
         items=ci.concat(add).slice(0,MAXI);group();meta={t:Date.now()};sv(KI,items);sv(KM,meta);await push();setSyncMsg("이 기기의 목록과 합쳤습니다 ("+items.length+"건)");
-      }else if(ct>lt){items=ci.slice(0,MAXI);group();meta={t:ct};sv(KI,items);sv(KM,meta);var ids={};items.forEach(function(i){ids[i.id]=1;});Object.keys(cache.items).forEach(function(k){if(!ids[k])delete cache.items[k];});sv(KC,cache);setSyncMsg("클라우드 목록을 불러왔습니다 ("+items.length+"건) "+stamp(Date.now()));}
+      }else if(ct>lt){items=ci.slice(0,MAXI);group();meta={t:ct};sv(KI,items);sv(KM,meta);var ids={};items.forEach(function(i){ids[i.id]=1;});Object.keys(cache.items).forEach(function(k){if(!ids[k])delete cache.items[k];});sv(KC,cache);setSyncMsg("최신 상태입니다 "+stamp(Date.now()));}
       else if(lt>ct){await push();}
       else setSyncMsg("최신 상태입니다 "+stamp(Date.now()));
       renderHero(); if($("law-pop").classList.contains("on")&&$("lp-view").style.display!=="none"){renderView();}
