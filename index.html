@@ -655,7 +655,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
 <div id="law-pop"><div class="lp-box"><div class="lp-head"><span>⚖️ 자주 쓰는 법령·조례</span><button type="button" id="lp-tv" class="on">조회 보기</button><button type="button" id="lp-te">목록 편집</button><span class="sp"></span><span id="lp-acct" style="font-size:.76rem;font-weight:600;color:#475569"></span><button type="button" id="lp-login">☁️ 구글 로그인</button><button type="button" id="lp-chk" class="pri" title="개정되었는지 확인하고, 바뀐 법령만 본문을 다시 받습니다">🔄 개정 여부 확인</button><button type="button" id="lp-force" title="저장된 내용을 무시하고 모두 새로 받습니다">전체 새로 조회</button><button type="button" id="lp-close">닫기 ✕</button></div><div class="lp-stat" id="lp-stat"></div><div class="lp-body"><aside id="lp-toc"></aside><div class="lp-scroll"><div id="lp-view"></div><div id="lp-edit" class="lp-edit" style="display:none"></div></div></div></div></div>
 <script>
 (function(){
-  var RELAY="https://raspy-feather-857a.nunco.workers.dev", MAXI=50, KI="hubLaw.items.v1", KC="hubLaw.cache.v2", KM="hubLaw.meta.v1", KS="hubLaw.sync", DAY=30*86400000;
+  var RELAY="https://raspy-feather-857a.nunco.workers.dev", MAXI=50, KI="hubLaw.items.v1", KC="hubLaw.cache.v3", KM="hubLaw.meta.v1", KS="hubLaw.sync", DAY=30*86400000;
   var FB_CFG={apiKey:"AIzaSyD8uE0nKQKMCOlYY-pYRSz7lgvw3GmWoJs",authDomain:"hwpxexcelonmerge.firebaseapp.com",projectId:"hwpxexcelonmerge",storageBucket:"hwpxexcelonmerge.firebasestorage.app",messagingSenderId:"263087970580",appId:"1:263087970580:web:026672eeb3c4793b974a01"}, FB_BASE="https://www.gstatic.com/firebasejs/10.12.5/";
   var $=function(id){return document.getElementById(id);};
   var esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
@@ -781,7 +781,9 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       list=list.filter(function(x){var n=nk(x);return !n||n===nsp(name);});
       if(list.length){
         out=list.map(function(b){
-          var raw=String(b["별표번호"]!=null?b["별표번호"]:"").trim(), no=raw.replace(/^0+(?=\d)/,""), br=String(b["별표가지번호"]||"").replace(/^0+/,"");
+          var raw=String(b["별표번호"]!=null?b["별표번호"]:"").trim(), no, br;
+          if(/^\d{6}$/.test(raw)){no=String(parseInt(raw.slice(0,4),10));br=String(parseInt(raw.slice(4),10)||"");}
+          else{no=raw.replace(/^0+(?=\d)/,"");br=String(b["별표가지번호"]||"").replace(/^0+/,"");}
           var kd=String(b["별표종류"]||b["별표구분"]||"별표"), links=[];
           Object.keys(b).forEach(function(k){var v=b[k];if(typeof v==="string"&&v&&!/상세/.test(k)&&!/(명|번호|종류|구분|일자|제목|내용)$/.test(k)&&/(\.do|\.pdf|\.hwp|flDownload|LSW|http)/i.test(v)&&!/^(\d|[가-힣])/.test(v)){var lb=/PDF/i.test(k+v)?"PDF":/HWP|한글/i.test(k)||/\.hwp/i.test(v)?"한글(HWP)":/이미지|image|png|jpg/i.test(k+v)?"이미지":"파일";if(!links.some(function(l){return l.href===absUrl(v);}))links.push({label:lb,href:absUrl(v)});}});
           return {no:no,br:br,kind:(/^\s*\[?\s*별표/.test(String(b["별표명"]||""))?"별표":/^\s*\[?\s*서식/.test(String(b["별표명"]||""))?"서식":(/서식|별지/.test(kd)?"서식":"별표")),title:String(b["별표명"]||b["별표제목"]||"").replace(/\s+/g," ").trim(),content:"",links:links,bid:String(b["별표일련번호"]||"")};
