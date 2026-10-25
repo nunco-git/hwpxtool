@@ -7,7 +7,7 @@
 <!-- 보안 정책: 이 앱은 파일을 서버로 전송하지 않고 브라우저 안에서만 처리하므로
      connect-src를 법령 조회 중계 주소 한 곳으로만 제한해 그 원칙을 브라우저 차원에서 강제한다. (문서 내용은 보내지 않고 법령명만 조회)
      각 도구는 base64로 인코딩되어 이 파일 안에 내장되어 있으며, iframe(srcdoc)으로 실행된다. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://raspy-feather-857a.nunco.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://raspy-feather-857a.nunco.workers.dev https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <script>
 /* 도메인 잠금: 아래 주소에서만 실행됩니다. */
 (function () {
@@ -295,7 +295,8 @@
         <div class="hero-col hero-etc">
           <div class="etc-h">⚖️ 자주 쓰는 법령·조례 바로가기</div>
           <div class="etc-s" id="etc-sum"></div>
-          <div class="etc-b"><button type="button" class="pri" id="etc-view">📖 한번에 조회</button><button type="button" id="etc-edit">✏️ 목록 편집</button></div>
+          <div class="etc-s" id="etc-acct" style="min-height:0"></div>
+          <div class="etc-b"><button type="button" class="pri" id="etc-view">📖 한번에 조회</button><button type="button" id="etc-edit">✏️ 목록 편집</button><button type="button" id="etc-login">☁️ 구글 로그인</button></div>
         </div>
       </div>
       <div id="home-cats"></div>
@@ -577,10 +578,11 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   });
 })();
 </script>
-<div id="law-pop"><div class="lp-box"><div class="lp-head"><span>⚖️ 자주 쓰는 법령·조례</span><button type="button" id="lp-tv" class="on">조회 보기</button><button type="button" id="lp-te">목록 편집</button><span class="sp"></span><button type="button" id="lp-chk" class="pri" title="개정되었는지 확인하고, 바뀐 법령만 본문을 다시 받습니다">🔄 개정 여부 확인</button><button type="button" id="lp-force" title="저장된 내용을 무시하고 모두 새로 받습니다">전체 새로 조회</button><button type="button" id="lp-close">닫기 ✕</button></div><div class="lp-stat" id="lp-stat"></div><div class="lp-body"><div id="lp-view"></div><div id="lp-edit" class="lp-edit" style="display:none"></div></div></div></div>
+<div id="law-pop"><div class="lp-box"><div class="lp-head"><span>⚖️ 자주 쓰는 법령·조례</span><button type="button" id="lp-tv" class="on">조회 보기</button><button type="button" id="lp-te">목록 편집</button><span class="sp"></span><span id="lp-acct" style="font-size:.76rem;font-weight:600;color:#475569"></span><button type="button" id="lp-login">☁️ 구글 로그인</button><button type="button" id="lp-chk" class="pri" title="개정되었는지 확인하고, 바뀐 법령만 본문을 다시 받습니다">🔄 개정 여부 확인</button><button type="button" id="lp-force" title="저장된 내용을 무시하고 모두 새로 받습니다">전체 새로 조회</button><button type="button" id="lp-close">닫기 ✕</button></div><div class="lp-stat" id="lp-stat"></div><div class="lp-body"><div id="lp-view"></div><div id="lp-edit" class="lp-edit" style="display:none"></div></div></div></div>
 <script>
 (function(){
-  var RELAY="https://raspy-feather-857a.nunco.workers.dev", MAXI=30, KI="hubLaw.items.v1", KC="hubLaw.cache.v1", DAY=30*86400000;
+  var RELAY="https://raspy-feather-857a.nunco.workers.dev", MAXI=50, KI="hubLaw.items.v1", KC="hubLaw.cache.v1", KM="hubLaw.meta.v1", KS="hubLaw.sync", DAY=30*86400000;
+  var FB_CFG={apiKey:"AIzaSyD8uE0nKQKMCOlYY-pYRSz7lgvw3GmWoJs",authDomain:"hwpxexcelonmerge.firebaseapp.com",projectId:"hwpxexcelonmerge",storageBucket:"hwpxexcelonmerge.firebasestorage.app",messagingSenderId:"263087970580",appId:"1:263087970580:web:026672eeb3c4793b974a01"}, FB_BASE="https://www.gstatic.com/firebasejs/10.12.5/";
   var $=function(id){return document.getElementById(id);};
   var esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
   var arr=function(x){return x==null?[]:Array.isArray(x)?x:[x];}, nsp=function(s){return String(s||"").replace(/\s+/g,"");};
@@ -761,13 +763,69 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   function rowHtml(it,i){return '<tr data-i="'+i+'"><td style="color:#94a3b8;font-size:.78rem">'+(i+1)+'</td><td><input type="text" data-f="name" value="'+esc(it.name)+'" placeholder="노인복지법"></td><td><input type="text" data-f="art" value="'+esc(it.art)+'" placeholder="비우면 전체 조문"></td><td><button type="button" data-del="'+i+'">×</button></td></tr>';}
   function cnt(){var e=$("lp-cnt");if(e)e.textContent=items.length+"/"+MAXI;}
   var uid=function(){return "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
-  function cleanItems(){items=items.filter(function(i){return String(i.name).trim();}).slice(0,MAXI).map(function(i){return {id:i.id||uid(),name:String(i.name).trim(),art:String(i.art||"").trim()};});sv(KI,items);var ids={};items.forEach(function(i){ids[i.id]=1;});Object.keys(cache.items).forEach(function(k){if(!ids[k])delete cache.items[k];});sv(KC,cache);}
+  function cleanItems(){items=items.filter(function(i){return String(i.name).trim();}).slice(0,MAXI).map(function(i){return {id:i.id||uid(),name:String(i.name).trim(),art:String(i.art||"").trim()};});sv(KI,items);var ids={};items.forEach(function(i){ids[i.id]=1;});Object.keys(cache.items).forEach(function(k){if(!ids[k])delete cache.items[k];});sv(KC,cache);touch();}
   function tab(t){$("lp-tv").classList.toggle("on",t==="v");$("lp-te").classList.toggle("on",t==="e");$("lp-view").style.display=t==="v"?"block":"none";$("lp-edit").style.display=t==="e"?"block":"none";$("lp-chk").style.display=t==="v"?"":"none";if(t==="e")renderEdit();}
   function open(t){$("law-pop").classList.add("on");tab(t||"v");if(t!=="e"){renderView();var stale=!cache.checked||Date.now()-cache.checked>DAY;if(items.length&&stale)refresh(false);else if(items.length)stat("마지막 확인 "+stamp(cache.checked)+" · 저장된 내용을 보여 드립니다 (마지막 확인 후 30일이 지나면 열 때 자동으로 개정 여부를 확인하며, 그 전에는 「개정 여부 확인」을 눌러야 합니다).");else stat("");}}
+
+
+  /* ---------- 구글 로그인 · 기기 간 목록 동기화 (Firebase) ---------- */
+  var fb=null, user=null, syncMsg="";
+  function loadScript(src){return new Promise(function(res,rej){var s=document.createElement("script");s.src=src;s.onload=res;s.onerror=function(){rej(new Error("Firebase 스크립트를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));};document.head.appendChild(s);});}
+  async function fbInit(){
+    if(fb)return fb;
+    await loadScript(FB_BASE+"firebase-app-compat.js"); await loadScript(FB_BASE+"firebase-auth-compat.js"); await loadScript(FB_BASE+"firebase-firestore-compat.js");
+    firebase.initializeApp(FB_CFG); fb={auth:firebase.auth(),db:firebase.firestore()};
+    fb.auth.onAuthStateChanged(function(u){user=u||null;acctUI();if(user)pull(false);});
+    return fb;
+  }
+  function acctUI(){
+    var on=!!user, label=on?"☁️ "+(user.email||"로그인됨")+" · 동기화 중":"";
+    var a=$("lp-acct"); if(a)a.textContent=label; var b=$("lp-login"); if(b)b.textContent=on?"로그아웃":"☁️ 구글 로그인";
+    var e=$("etc-acct"); if(e)e.innerHTML=on?esc(label)+(syncMsg?"<br>"+esc(syncMsg):""):"☁️ 구글 로그인하면 핸드폰 등 다른 기기에서도 같은 목록을 볼 수 있습니다."+(syncMsg?"<br>"+esc(syncMsg):"");
+    var h=$("etc-login"); if(h)h.textContent=on?"로그아웃":"☁️ 구글 로그인";
+  }
+  function setSyncMsg(t){syncMsg=t||"";acctUI();}
+  var meta=ld(KM,null);
+  function touch(){meta={t:Date.now()};sv(KM,meta);if(user)push();}
+  var slim=function(l){return l.map(function(i){return {id:i.id,name:i.name,art:i.art||""};});};
+  async function push(){
+    if(!user||!fb)return;
+    try{await fb.db.collection("hubLaw").doc(user.uid).set({items:slim(items),updatedAt:(meta&&meta.t)||Date.now()});setSyncMsg("저장됨 "+stamp(Date.now()));}
+    catch(e){setSyncMsg("클라우드 저장 실패: "+fbErr(e));}
+  }
+  async function pull(silent){
+    if(!user||!fb)return;
+    try{
+      var snap=await fb.db.collection("hubLaw").doc(user.uid).get();
+      if(!snap.exists){if(items.length){if(!meta)meta={t:Date.now()};sv(KM,meta);await push();}else setSyncMsg("클라우드에 저장된 목록이 없습니다.");return;}
+      var d=snap.data()||{}, ci=Array.isArray(d.items)?d.items:[], ct=+d.updatedAt||0, lt=meta?meta.t:0;
+      if(!meta&&items.length&&ci.length){
+        var key=function(i){return nsp(i.name)+"|"+nsp(i.art);},seen={};ci.forEach(function(i){seen[key(i)]=1;});
+        var add=items.filter(function(i){return !seen[key(i)];});
+        items=ci.concat(add).slice(0,MAXI);meta={t:Date.now()};sv(KI,items);sv(KM,meta);await push();setSyncMsg("이 기기의 목록과 합쳤습니다 ("+items.length+"건)");
+      }else if(ct>lt){items=ci.slice(0,MAXI);meta={t:ct};sv(KI,items);sv(KM,meta);var ids={};items.forEach(function(i){ids[i.id]=1;});Object.keys(cache.items).forEach(function(k){if(!ids[k])delete cache.items[k];});sv(KC,cache);setSyncMsg("클라우드 목록을 불러왔습니다 ("+items.length+"건) "+stamp(Date.now()));}
+      else if(lt>ct){await push();}
+      else setSyncMsg("최신 상태입니다 "+stamp(Date.now()));
+      renderHero(); if($("law-pop").classList.contains("on")&&$("lp-view").style.display!=="none"){renderView();}
+    }catch(e){setSyncMsg("클라우드 불러오기 실패: "+fbErr(e));}
+  }
+  function fbErr(e){var c=e&&e.code||"";if(c==="auth/unauthorized-domain")return "이 사이트 주소가 Firebase 승인된 도메인에 없습니다 (Firebase 콘솔 → Authentication → 설정 → 승인된 도메인에 추가).";if(c==="permission-denied"||/permission/i.test(e&&e.message||""))return "접근 권한이 없습니다 (Firestore 보안 규칙에 hubLaw/{uid} 규칙을 추가하세요).";if(c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request")return "로그인 창이 닫혔습니다.";return (e&&e.message)||String(e);}
+  async function toggleLogin(){
+    try{
+      await fbInit();
+      if(user){await fb.auth.signOut();try{localStorage.removeItem(KS);}catch(e){}user=null;setSyncMsg("로그아웃했습니다. 이 기기의 목록은 그대로 남아 있습니다.");return;}
+      setSyncMsg("로그인 창을 여는 중…");
+      var prov=new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({prompt:"select_account"});
+      try{await fb.auth.signInWithPopup(prov);}
+      catch(e){if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment")){try{localStorage.setItem(KS,"1");}catch(x){}await fb.auth.signInWithRedirect(prov);return;}throw e;}
+      try{localStorage.setItem(KS,"1");}catch(e){}
+    }catch(e){setSyncMsg("로그인 실패: "+fbErr(e));}
+  }
 
   /* ---------- 이벤트 ---------- */
   function init(){
     $("etc-view").addEventListener("click",function(){open("v");});
+    $("etc-login").addEventListener("click",toggleLogin);$("lp-login").addEventListener("click",toggleLogin);
     $("etc-edit").addEventListener("click",function(){open("e");});
     $("lp-close").addEventListener("click",function(){$("law-pop").classList.remove("on");});
     $("law-pop").addEventListener("click",function(e){if(e.target===$("law-pop"))$("law-pop").classList.remove("on");});
@@ -794,7 +852,9 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       var a=e.target.closest(".lp-ref"); if(a){e.preventDefault();toggleRef(a);return;}
       var x=e.target.closest(".lp-sub .x"); if(x){x.closest(".lp-sub").remove();}
     });
-    renderHero();
+    renderHero();acctUI();
+    var fl=null;try{fl=localStorage.getItem(KS);}catch(e){}
+    if(fl==='1')fbInit().then(function(){return fb.auth.getRedirectResult();}).catch(function(e){setSyncMsg("로그인 확인 실패: "+fbErr(e));});
   }
   async function toggleRef(a){
     var line=a.closest(".lp-line"); if(!line)return; var key=a.dataset.law+"|"+a.dataset.art, nx=line.nextElementSibling;
