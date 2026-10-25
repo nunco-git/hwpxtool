@@ -372,7 +372,7 @@
         </div>
         <div class="hero-col hero-desc">
           <ul class="hero-feat">
-            <li><b>📄 공문 자동완성·공문 오류 검사·사진 일괄 삽입, 다양한 서식 작성</b></li>
+            <li><b>📄 공문 자동완성·문서 오류 검사·사진 일괄 삽입, 다양한 서식 작성</b></li>
             <li><b>⚖️ 법령·조례·규칙 즐겨찾기 설정 및 스마트폰에서 조회 가능</b></li>
             <li><b>🔒 설치 없이 브라우저에서 처리</b><span>문서 파일은 외부 서버로 보내지 않고 내 컴퓨터 안에서만 처리</span></li>
           </ul>
@@ -1053,9 +1053,8 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   function renderHero(){
     var e=$("etc-sum"); if(!e)return;
     if(!items.length){e.textContent="아직 등록된 법령·조례가 없습니다. 「목록 편집」에서 법령(조례)명과 조문번호를 최대 "+MAXI+"개까지 등록하세요.";return;}
-    var vi=viewItems(),nm=vi.slice(0,3).map(function(i){return (i.fav?"★":"")+i.name+" "+(parseArt(i.art)?artLabel(parseArt(i.art)):(i.art||"전체"));}).join(" · ");
     var chgN=items.filter(function(i){var c=cache.items[i.id];return c&&c.changed;}).length;
-    e.innerHTML="등록 "+items.length+"/"+MAXI+"건 — "+esc(nm)+(items.length>3?" 외 "+(items.length-3)+"건":"")+(chgN?' <b style="color:#b45309">· 변경 표시 '+chgN+"건</b>":"")+(cache.checked?"<br>마지막 확인: "+stamp(cache.checked):"");
+    e.innerHTML="등록 "+items.length+"/"+MAXI+"건"+(chgN?' <b style="color:#b45309">· 변경 표시 '+chgN+"건</b>":"")+(cache.checked?"<br>마지막 확인: "+stamp(cache.checked):"");
   }
   var sel="all", navHide=false; try{navHide=localStorage.getItem("hubLaw.navhide")==="1";}catch(e){}
   function itemLab2(it){var c=cache.items[it.id]||{},p=parseArt(it.art),bq=parseBp(it.art);
@@ -1159,7 +1158,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   function acctUI(){
     var on=!!user, label=on?"☁️ "+(user.email||"로그인됨")+" · 동기화 중":"";
     var a=$("lp-acct"); if(a)a.textContent=label; var b=$("lp-login"); if(b)b.textContent=on?"로그아웃":"☁️ 구글 로그인";
-    var e=$("etc-acct"); if(e)e.innerHTML=on?esc(label)+(syncMsg?"<br>"+esc(syncMsg):""):"☁️ 구글 로그인하면 핸드폰 등 다른 기기에서도 같은 목록을 볼 수 있습니다."+(syncMsg?"<br>"+esc(syncMsg):"");
+    var e=$("etc-acct"); if(e)e.innerHTML=on?esc(label)+(syncMsg?" · "+esc(syncMsg).replace(/입니다/,""):""):"☁️ 구글 로그인하면 다른 기기에서도 같은 목록을 볼 수 있습니다."+(syncMsg?" "+esc(syncMsg):"");
     var h=$("etc-login"); if(h)h.textContent=on?"로그아웃":"☁️ 구글 로그인";
   }
   function setSyncMsg(t){syncMsg=t||"";acctUI();}
