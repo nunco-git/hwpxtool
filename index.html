@@ -364,6 +364,9 @@
 #law-pop .lp-head>span.keep{font-size:.72rem;letter-spacing:-.04em}#law-pop .lp-head button{padding:4px 7px;font-size:.74rem}
 }
 .hero.hero3{padding:8px 12px;gap:10px}.hero3 .hero-col{padding:8px 14px}.hero3 h1{margin:6px 0 0;font-size:1.7rem}.hero3 .hero-badge{padding:3px 10px}.hero-feat{gap:5px}.hero3 .hero-etc{gap:5px}.hero3 .etc-s{min-height:0}
+.tcard{gap:6px;padding:12px 13px}.tcard .th{display:flex;align-items:center;gap:8px}.tcard .ti{width:32px!important;height:32px!important;font-size:1.1rem!important;border-radius:9px;flex:0 0 auto}.tcard .tn{flex:1;min-width:0;font-size:.88rem!important;line-height:1.3;word-break:keep-all}.tcard .go{margin-top:0!important;flex:0 0 auto;white-space:nowrap;font-size:.74rem!important;border:1px solid var(--c);border-radius:999px;padding:2px 9px}.tcard .td{-webkit-line-clamp:3}
+.tcard .tn small{display:block;font-size:.6rem;font-weight:600;color:#64748b;letter-spacing:-.06em;line-height:1.25;white-space:nowrap;overflow:hidden}
+.tcard .tn{font-size:.82rem!important;letter-spacing:-.03em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.tcard .tn small{display:block}
 </style>
 </head>
 <body>
@@ -626,8 +629,8 @@ function renderHome() {
     const grid = document.createElement("div"); grid.className = "card-grid";
     tools.forEach(t => {
       const b = document.createElement("button"); b.type = "button"; b.className = "tcard";
-      b.innerHTML = '<div class="ti">' + t.icon + '</div><div class="tn"></div><div class="td"></div><div class="go">바로 열기 →</div>';
-      b.querySelector(".tn").textContent = t.name; b.querySelector(".td").textContent = t.desc;
+      b.innerHTML = '<div class="th"><div class="ti">' + t.icon + '</div><div class="tn"></div><div class="go">열기</div></div><div class="td"></div>';
+      { const tn = b.querySelector(".tn"), mm = /^(.*?)\s*\((.+)\)\s*$/.exec(t.name); if (mm && mm[1].length <= 12 && mm[2].length <= 16) { tn.textContent = mm[1]; const sm = document.createElement("small"); sm.textContent = mm[2]; tn.appendChild(sm); } else tn.textContent = t.name; } b.querySelector(".td").textContent = t.desc;
       b.addEventListener("click", () => { openTool(t.id, true); window.scrollTo(0, 0); });
       grid.appendChild(b);
     });
