@@ -348,6 +348,11 @@
 .lp-diag{background:#0f172a;color:#e2e8f0;padding:10px;border-radius:6px;font-size:.72rem;line-height:1.45;white-space:pre-wrap;word-break:break-all;max-height:360px;overflow:auto;user-select:text}
 .bp-htm{background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px;overflow:auto;max-height:560px;font-size:.8rem}.bp-htm table{border-collapse:collapse}.bp-htm td,.bp-htm th{border:1px solid #94a3b8;padding:3px 6px}.bp-htm img{max-width:100%}
 .kw-loc{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 0;font-size:.82rem;color:#475569}.kw-loc select{padding:5px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}
+#lp-toc .li-ctl{float:right;display:inline-flex;gap:2px;margin:0 0 2px 4px}
+#lp-toc .li-ctl b{font-size:.68rem;font-weight:400;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:0 4px;background:#fff;cursor:pointer;line-height:1.5}
+#lp-toc .li-ctl b:hover{background:#dbeafe;color:#1d4ed8}
+#lp-toc .li-ctl b.on{color:#d97706;border-color:#fcd34d;background:#fffbeb}
+#lp-toc .li-ctl b.del:hover{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
 </style>
 </head>
 <body>
@@ -824,14 +829,14 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     if(Array.isArray(o)){if(o.length&&o[0]&&typeof o[0]==="object"&&("별표번호" in o[0]||"별표제목" in o[0]))return o;for(var x of o){var r=findBpList(x,d+1);if(r)return r;}return null;}
     if("별표번호" in o||"별표제목" in o)return [o];
     for(var k of Object.keys(o)){var r2=findBpList(o[k],d+1);if(r2)return r2;}return null;}
-  function absUrl(u){u=String(u||"").trim();if(!u)return "";if(/^https?:/i.test(u))return u;if(u.charAt(0)==="/")return "https://www.law.go.kr"+u;return "https://www.law.go.kr/"+u;}
+  function absUrl(u){u=String(u||"").trim();if(!u)return "";if(/^https?:/i.test(u))return u.replace(/^http:\/\/(www\.)?law\.go\.kr/i,"https://www.law.go.kr");if(u.charAt(0)==="/")return "https://www.law.go.kr"+u;return "https://www.law.go.kr/"+u;}
   function extractBps(js){
     var list=findBpList(js)||[];
     return list.map(function(b){
       var no=String(b["별표번호"]!=null?b["별표번호"]:"").replace(/^0+(?=\d)/,"").trim(), br=String(b["별표가지번호"]||"").replace(/^0+/,"").trim(), kind=String(b["별표구분"]||b["구분"]||"별표").trim()||"별표";
-      var links=[];Object.keys(b).forEach(function(k){var v=b[k];if(typeof v==="string"&&v&&/링크|파일/.test(k)&&/(\.do|\/|http)/.test(v)&&!/파일명/.test(k)){links.push({label:/PDF/i.test(k)?"PDF":/HWP|한글/i.test(k)?"한글(HWP)":/이미지/.test(k)?"이미지":"파일",href:absUrl(v)});}});
+      var links=[];Object.keys(b).forEach(function(k){var v=b[k];if(typeof v==="string"&&v&&/링크|파일/.test(k)&&/(\.do|\/|http)/.test(v)&&(!/파일명/.test(k)||/^https?:\/\/[^ ]*flDownload/i.test(v))){links.push({label:/PDF/i.test(k)?"PDF":/HWP|한글/i.test(k)?"한글(HWP)":/이미지/.test(k)?"이미지":"파일",href:absUrl(v)});}});
       var title=String(b["별표제목"]||b["제목"]||"").replace(/\s+/g," ").trim();
-      return {no:no,br:br,kind:/^\s*\[?\s*별표/.test(title)?"별표":/^\s*\[?\s*서식/.test(title)?"서식":(kind==="서식"||/서식/.test(kind)?"서식":"별표"),title:title,content:flatTxt(b["별표내용"]).replace(/[ \t]+\n/g,"\n").trim(),links:links};
+      return {no:no,br:br,kind:/^\s*\[?\s*별표/.test(title)?"별표":/^\s*\[?\s*서식/.test(title)?"서식":(kind==="서식"||/서식/.test(kind)?"서식":"별표"),title:title,content:flatTxt(b["별표내용"]).replace(/[ \t]+\n/g,"\n").trim(),links:links,bid:String(b["별표키"]||"")};
     });
   }
   var bpKey=function(b){return b.kind+b.no+(b.br?"의"+b.br:"");};
@@ -1092,7 +1097,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     if(!items.length){t.innerHTML="";return;}
     var h='<div class="li all'+(sel==="all"?" on":"")+'" data-sel="all"><div class="l1">📚 전체 보기</div><div class="l2">등록 '+items.length+'건 한꺼번에</div></div>';
     viewItems().forEach(function(it){var c=cache.items[it.id]||{};
-      h+='<div class="li'+(sel===it.id?" on":"")+(c.changed?" chg":"")+(it.fav?" fv":"")+'" data-sel="'+esc(it.id)+'">'+(it.fav?'<span class="toc-mv"><b data-fmv="'+esc(it.id)+'|-1" title="위로">▲</b><b data-fmv="'+esc(it.id)+'|1" title="아래로">▼</b></span>':"")+'<div class="l1">'+(it.fav?"★ ":"")+esc(it.name)+(c.changed?" ●":"")+'</div><div class="l2">'+esc(itemLab2(it))+"</div></div>";});
+      h+='<div class="li'+(sel===it.id?" on":"")+(c.changed?" chg":"")+(it.fav?" fv":"")+'" data-sel="'+esc(it.id)+'">'+'<div class="li-ctl"><b data-tfav="'+esc(it.id)+'" class="'+(it.fav?"on":"")+'" title="'+(it.fav?"즐겨찾기 해제":"즐겨찾기 추가 (상단 고정)")+'">'+(it.fav?"★":"☆")+'</b><b data-fmv="'+esc(it.id)+'|-1" title="위로">▲</b><b data-fmv="'+esc(it.id)+'|1" title="아래로">▼</b><b data-tdel="'+esc(it.id)+'" class="del" title="목록에서 삭제">✕</b></div>'+'<div class="l1">'+(it.fav?"★ ":"")+esc(it.name)+(c.changed?" ●":"")+'</div><div class="l2">'+esc(itemLab2(it))+"</div></div>";});
     t.innerHTML=h;
   }
   function goTo(id){
@@ -1248,6 +1253,8 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       if(t.id==="lp-dump"){$("lp-bulk").value=items.map(function(i){return (i.name+" "+i.art).trim();}).join("\n");return;}
     });
     $("lp-toc").addEventListener("click",function(e){
+      var tf=e.target.closest("[data-tfav]");if(tf){e.stopPropagation();toggleFav(tf.dataset.tfav);return;}
+      var td=e.target.closest("[data-tdel]");if(td){e.stopPropagation();var di=items.findIndex(function(i){return i.id===td.dataset.tdel;});if(di>=0){var dn=items[di];if(!confirm("「"+dn.name+(dn.art?" "+dn.art:"")+"」을(를) 목록에서 삭제할까요?"))return;items.splice(di,1);delete cache.items[dn.id];if(sel===dn.id)sel="all";sv(KI,items);sv(KC,cache);touch();keepScroll(renderView);renderHero();stat("목록에서 삭제했습니다 ("+items.length+"/"+MAXI+").");}return;}
       var mvb=e.target.closest("[data-fmv]");
       if(mvb){e.stopPropagation();var pr=mvb.dataset.fmv.split("|"),ix=items.findIndex(function(i){return i.id===pr[0];});if(ix>=0&&moveIn(ix,ix+(+pr[1]))){sv(KI,items);touch();keepScroll(renderView);renderHero();}else stat('<span style="color:#64748b">더 이상 옮길 수 없습니다.</span>');return;}
       var sx=e.target.closest("[data-sel]");if(sx){sel=sx.dataset.sel;renderView();var sc=document.querySelector(".lp-scroll");if(sc)sc.scrollTop=0;}});
