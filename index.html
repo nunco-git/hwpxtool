@@ -891,13 +891,13 @@ document.getElementById("btn-reset").addEventListener("click", () => {
         var pg=await doc.getPage(i), vp=pg.getViewport({scale:1.8}), cv=document.createElement("canvas"); cv.width=vp.width;cv.height=vp.height;cv.className="bp-pg";
         box.appendChild(cv); await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
       }
-    }catch(e){box.innerHTML='<div class="lp-line" style="color:#b91c1c">'+esc(e.message||String(e))+"</div>";}
+    }catch(e){var em=e.message||String(e);(mem.pvMsg=mem.pvMsg||{})[btn.dataset.pdf]=em;box.dataset.on="0";btn.textContent="📄 미리보기 (표 모양 그대로)";box.innerHTML='<div class="lp-line bp-err" style="color:#b91c1c">'+esc(em)+"</div>";}
   }
   function bpHtml(b,nm){
     var h='<div class="lp-line"><b>'+esc(bpLabel(b))+(b.title?" "+esc(b.title):"")+"</b></div>";
     var pdf=b.links.filter(function(l){return l.label==="PDF";})[0];
     var pv=pdf||b.links[0];
-    if(b.links.length)h+='<div class="lp-line">'+(pv?'<button type="button" class="bp-pdfbtn" data-pdf="'+esc(pv.href)+'"'+(b.bid?' data-bid="'+esc(b.bid)+'"':"")+'>📄 미리보기 (표 모양 그대로)</button> ':"")+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>"+(pv?'<div class="bp-pdfbox"></div>':"");
+    if(b.links.length)h+='<div class="lp-line">'+(pv?'<button type="button" class="bp-pdfbtn" data-pdf="'+esc(pv.href)+'"'+(b.bid?' data-bid="'+esc(b.bid)+'"':"")+'>📄 미리보기 (표 모양 그대로)</button> ':"")+b.links.map(function(l){return '<a class="lp-file" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+" 열기 ↗</a>";}).join(" ")+"</div>"+(pv?'<div class="bp-pdfbox">'+((mem.pvMsg||{})[pv.href]?'<div class="lp-line bp-err" style="color:#b91c1c">'+esc(mem.pvMsg[pv.href])+"</div>":"")+"</div>":"");
     if(b.content)h+='<details class="bp-txt"'+(b.links.some(function(l){return l.label==="PDF";})?"":" open")+'><summary>텍스트로 보기 (표가 깨질 수 있음)</summary><div class="lp-line lp-bpc">'+esc(b.content)+"</div></details>";
     else if(!b.links.length)h+='<div class="lp-line" style="color:#64748b">이 별표·서식은 파일 링크를 받지 못했습니다. 아래 바로가기로 law.go.kr에서 확인하세요.</div>';
     if(nm)h+='<div class="lp-line" style="font-size:.78rem"><a class="lp-file" href="'+esc(lawUrl(nm,""))+'" target="_blank" rel="noopener">'+esc(nm)+' 바로가기 (law.go.kr) ↗</a></div>';
