@@ -354,6 +354,15 @@
 #lp-toc .li-ctl b.on{color:#d97706;border-color:#fcd34d;background:#fffbeb}
 #lp-toc .li-ctl b.del:hover{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
 .hero-feat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;text-align:left}.hero-feat li{display:flex;flex-direction:column;gap:1px;line-height:1.4}.hero-feat b{font-size:.88rem;color:#1e293b;word-break:keep-all}.hero-feat span{font-size:.78rem;color:#475569}
+#lp-hm{display:none}
+@media (max-width:760px){
+#lp-hm{display:inline-block}
+#law-pop .lp-head{padding:8px 10px;gap:6px}
+#lp-toc{max-height:9.2em;overflow:auto}
+#law-pop.mh .lp-head>*:not(.keep){display:none}
+#law-pop.mh .lp-stat{display:none}
+#law-pop .lp-head>span.keep{font-size:.72rem;letter-spacing:-.04em}#law-pop .lp-head button{padding:4px 7px;font-size:.74rem}
+}
 </style>
 </head>
 <body>
@@ -652,7 +661,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   });
 })();
 </script>
-<div id="law-pop"><div class="lp-box"><div class="lp-head"><span>⚖️ 자주 쓰는 법령·조례</span><button type="button" id="lp-tv" class="on">조회 보기</button><button type="button" id="lp-te">목록 편집</button><span class="sp"></span><span id="lp-acct" style="font-size:.76rem;font-weight:600;color:#475569"></span><button type="button" id="lp-login">☁️ 구글 로그인</button><button type="button" id="lp-chk" class="pri" title="개정되었는지 확인하고, 바뀐 법령만 본문을 다시 받습니다">🔄 개정 여부 확인</button><button type="button" id="lp-force" title="저장된 내용을 무시하고 모두 새로 받습니다">전체 새로 조회</button><button type="button" id="lp-close">닫기 ✕</button></div><div class="lp-stat" id="lp-stat"></div><div class="lp-body"><aside id="lp-toc"></aside><div class="lp-scroll"><div id="lp-view"></div><div id="lp-edit" class="lp-edit" style="display:none"></div></div></div></div></div>
+<div id="law-pop"><div class="lp-box"><div class="lp-head"><span class="keep">⚖️ 자주 쓰는 법령·조례</span><button type="button" id="lp-tv" class="on keep">조회 보기</button><button type="button" id="lp-te" class="keep">목록 편집</button><button type="button" id="lp-hm" class="keep">▲ 메뉴 가리기</button><span class="sp"></span><span id="lp-acct" style="font-size:.76rem;font-weight:600;color:#475569"></span><button type="button" id="lp-login">☁️ 구글 로그인</button><button type="button" id="lp-chk" class="pri" title="개정되었는지 확인하고, 바뀐 법령만 본문을 다시 받습니다">🔄 개정 여부 확인</button><button type="button" id="lp-force" title="저장된 내용을 무시하고 모두 새로 받습니다">전체 새로 조회</button><button type="button" id="lp-close">닫기 ✕</button></div><div class="lp-stat" id="lp-stat"></div><div class="lp-body"><aside id="lp-toc"></aside><div class="lp-scroll"><div id="lp-view"></div><div id="lp-edit" class="lp-edit" style="display:none"></div></div></div></div></div>
 <script>
 (function(){
   var RELAY="https://raspy-feather-857a.nunco.workers.dev", MAXI=50, KI="hubLaw.items.v1", KC="hubLaw.cache.v3", KM="hubLaw.meta.v1", KS="hubLaw.sync", DAY=30*86400000;
@@ -1210,6 +1219,9 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     $("law-pop").addEventListener("click",function(e){if(e.target===$("law-pop"))$("law-pop").classList.remove("on");});
     document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("law-pop").classList.contains("on"))$("law-pop").classList.remove("on");});
     $("lp-tv").addEventListener("click",function(){tab("v");renderView();});
+    (function(){var hm=$("lp-hm"),pop=$("law-pop");if(!hm)return;function ap(on){pop.classList.toggle("mh",on);hm.textContent=on?"▼ 메뉴 보기":"▲ 메뉴 가리기";}
+      var st=false;try{st=localStorage.getItem("hubLaw.mh")==="1";}catch(e){}ap(st);
+      hm.addEventListener("click",function(){var on=!pop.classList.contains("mh");ap(on);try{localStorage.setItem("hubLaw.mh",on?"1":"0");}catch(e){}});})();
     $("lp-te").addEventListener("click",function(){tab("e");});
     $("lp-chk").addEventListener("click",function(){refresh(false);});
     $("lp-force").addEventListener("click",function(){mem.search={};mem.body={};refresh(true);});
