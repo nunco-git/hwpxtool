@@ -1040,7 +1040,9 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     var ck={};(c.chgKeys||[]).forEach(function(k){ck[k]=1;});
     var h='<div class="lp-it'+(c.changed?" chg":"")+'" id="lp-it-'+esc(it.id)+'" data-id="'+esc(it.id)+'"><h4>'+star(it)+esc(it.name)+" "+esc(lab)+" <small>("+c.arts.length+"개 조"+(c.bps&&c.bps.length?" · 별표·서식 "+c.bps.length+"건":"")+")</small>"+(c.eff?"<small>시행 "+esc(fmt8(c.eff))+"</small>":"")+(c.changed?'<span class="lp-badge chg">변경 '+(c.chgKeys||[]).length+"개 조 · "+esc(stamp(c.changed))+"</span>":"")+"</h4>";
     if(c.changed)h+='<div class="lp-line" style="font-size:.82rem;color:#92400e">변경된 조문: '+esc((c.chgKeys||[]).join(", "))+'</div>';
-    h+=srcLink(it);h+='<details open><summary style="cursor:pointer;font-size:.82rem;color:#1d4ed8;margin:4px 0">전체 조문 펼치기·접기</summary>';
+    h+=srcLink(it);
+    if(isOrdin(it.name)&&!(c.bps&&c.bps.length))h+='<div class="lp-line" style="font-size:.78rem;color:#92400e">※ 이 조례·규칙의 별표·서식이 법령센터 조회 결과에 포함되지 않았습니다. 별표가 있는 경우 위의 「law.go.kr에서 원문 보기」에서 확인하세요.</div>';
+    h+='<details open><summary style="cursor:pointer;font-size:.82rem;color:#1d4ed8;margin:4px 0">전체 조문 펼치기·접기</summary>';
     c.arts.forEach(function(a){var k=artKey(a);
       h+='<div class="lp-art" style="margin:6px 0;padding:6px 8px;border-top:1px dashed #e2e8f0'+(ck[k]?";background:#fef3c7":"")+'" id="lp-'+esc(it.id)+"-"+esc(k)+'">'+addBtn(it,k)+(ck[k]?'<span class="lp-badge chg">변경</span>':"")+artHtml(a,c.law||it.name);
       if(ck[k]&&c.prevMap&&c.prevMap[k])h+='<details><summary style="cursor:pointer;font-size:.78rem;color:#92400e">변경 전 내용</summary><div class="lp-prev">'+esc(c.prevMap[k])+"</div></details>";
