@@ -971,7 +971,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   var chainRe=/^(?:\s*제\s*\d+\s*(?:항|호|목)(?:\s*의\s*\d+)?|\s*,\s*|\s*(?:및|또는|이나|와|과|부터|까지|내지|ㆍ|·)\s*)*$/;
   var baseOf=function(n){return String(n).replace(/\s*(시행령|시행규칙)$/,"").trim();};
   function linkify(text,ctx,cur){
-    var out="",last=0,m,lastName=null,lastEnd=0; RE.lastIndex=0; text=String(text);
+    var out="",last=0,m,lastName=null,lastEnd=0,lastLaw=null; RE.lastIndex=0; text=String(text);
     var al=aliasStore[nsp(ctx)]||{}, ord=isOrdin(ctx);
     while((m=RE.exec(text))){
       var name,art,isBp=false,sh="",sfx="",ex=false;
@@ -982,19 +982,20 @@ document.getElementById("btn-reset").addEventListener("click", () => {
         last=m.index+m[0].length;lastEnd=last;continue;}
       if(m[13]){ /* 조문 번호 없는 「법령명」 → law.go.kr 링크 */
         var qn=m[14].trim(),okn=/(법|법률|령|규칙|조례|규정)$/.test(nsp(qn))&&!/^(법|영|규칙)$/.test(nsp(qn));
+        if(okn)lastLaw=qn;
         out+=esc(text.slice(last,m.index))+(okn?'<a class="lp-ext" href="'+esc(lawUrl(qn,""))+'" target="_blank" rel="noopener" title="law.go.kr에서 열기">'+esc(m[0])+'</a>':esc(m[0]));
         last=m.index+m[0].length;lastEnd=last;continue;}
       if(m[11]){isBp=true;art=m[11];if(m[10]){name=m[10].trim();ex=true;}else{name=ctx;var gp=text.slice(lastEnd,m.index);if(lastName&&gp.length<=24&&chainRe.test(gp))name=lastName;
         var bf=text.slice(Math.max(0,m.index-14),m.index),p1=/(?:같은\s*법(?:률)?|동법)(?:\s*(시행령|시행규칙))?\s*$/.exec(bf),p2=/(?:^|[^가-힣])(영|규칙|시행령|시행규칙|법)\s*$/.exec(bf);
         if(p1){sfx=p1[1]||"";if(lastName)name=baseOf(lastName)+(sfx?" "+sfx:"");else if(al["법"])name=al["법"]+(sfx?" "+sfx:"");else if(ord){name=ctx;sh="법";}else name=baseOf(ctx)+(sfx?" "+sfx:"");}
         else if(p2){var k2=p2[1],b2=baseOf(ctx);if(al[k2])name=al[k2];else if(ord){name=ctx;sh=k2;}else name=k2==="법"?b2:(/시행령|영/.test(k2)&&k2!=="시행규칙"?b2+" 시행령":b2+" 시행규칙");}}}
-      else if(m[3]){art=m[3];if(m[2]){name=m[2].trim();ex=true;}else{name=ctx;var gap=text.slice(lastEnd,m.index);if(lastName&&gap.length<=24&&chainRe.test(gap))name=lastName;}}
-      else if(m[4]){art=m[6];sfx=m[5]||"";
+      else if(m[3]){art=m[3];if(m[2]){name=m[2].trim();ex=true;lastLaw=name;}else{name=ctx;var gap=text.slice(lastEnd,m.index);if(lastLaw)name=lastLaw;else if(lastName&&gap.length<=24&&chainRe.test(gap))name=lastName;}}
+      else if(m[4]){lastLaw=null;art=m[6];sfx=m[5]||"";
         if(lastName)name=baseOf(lastName)+(sfx?" "+sfx:"");
         else if(al["법"])name=al["법"]+(sfx?" "+sfx:"");
         else if(ord){name=ctx;sh="법";}
         else name=baseOf(ctx)+(sfx?" "+sfx:"");}
-      else{var kw=m[7],b=baseOf(ctx);art=m[8];
+      else{lastLaw=null;var kw=m[7],b=baseOf(ctx);art=m[8];
         if(al[kw])name=al[kw];
         else if(ord){name=ctx;sh=kw;}
         else name=kw==="법"?(b===ctx?ctx:b):(/시행령|영/.test(kw)&&kw!=="시행규칙"?b+" 시행령":b+" 시행규칙");}
