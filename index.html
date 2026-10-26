@@ -1340,7 +1340,7 @@ document.getElementById("btn-reset").addEventListener("click", () => {
       try{
         var sx=await lawSearch(dn2); if(!sx.exact)throw new Error("「"+dn2+"」을(를) 찾지 못했습니다.");
         var bd2=await lawBody(sx.exact,sx.target), pp=parseArt(a.dataset.art), tk2=a.dataset.tok||"법";
-        var re2=new RegExp("(?<![가-힣])(?<!다른\\s)"+tk2+"\\s*제\\s*"+pp.no+"\\s*조"+(pp.br?"\\s*의\\s*"+pp.br+"(?!\\d)":"(?!\\s*의\\s*\\d)"));
+        var nm2=String(tk2==="영"?(a.dataset.cn||""):(a.dataset.law||"")).replace(/\s+/g,""), nmPat=nm2?nm2.split("").map(function(ch){return ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}).join("\\s*")+"」?":"", re2=new RegExp("(?:(?<![가-힣])(?<!다른\\s)"+tk2+(nmPat?"|"+nmPat:"")+")\\s*제\\s*"+pp.no+"\\s*조"+(pp.br?"\\s*의\\s*"+pp.br+"(?!\\d)":"(?!\\s*의\\s*\\d)"));
         var hits=[], viaDel=false;
         try{var tg=await delegTargets(a.dataset.cn||a.dataset.law,pp,a.dataset.dec);
           tg.forEach(function(t){var f=findArt(bd2,{no:t.no,br:t.br});if(f&&hits.indexOf(f)<0)hits.push(f);});viaDel=hits.length>0;}catch(e){}
