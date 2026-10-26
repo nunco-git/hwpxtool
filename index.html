@@ -819,15 +819,21 @@ document.getElementById("btn-reset").addEventListener("click", () => {
     return o;}
   /* 법제처 '위임법령' 정보: 이 조문이 어느 시행령·시행규칙 조문에 위임했는지 */
   async function delegTargets(lawName,p,kind){
-    var js=await lawFetch("lawService",{target:"lsDelegated",LM:lawName}), res=[], seen={};
+    var sx=await lawSearch(lawName); if(!sx.exact||sx.target!=="law")throw new Error("법령 검색 실패");
+    var res0=await fetch(RELAY+"/lawService?"+new URLSearchParams({target:"lsDelegated",type:"XML",MST:sx.exact.mst}).toString());
+    if(!res0.ok)throw new Error("HTTP "+res0.status);
+    var xml=new DOMParser().parseFromString(await res0.text(),"text/xml");
+    var toObj=function(el){var kids=Array.prototype.filter.call(el.childNodes,function(n){return n.nodeType===1;});if(!kids.length)return (el.textContent||"").trim();var o={};kids.forEach(function(k){var v=toObj(k);if(k.nodeName in o){if(!Array.isArray(o[k.nodeName]))o[k.nodeName]=[o[k.nodeName]];o[k.nodeName].push(v);}else o[k.nodeName]=v;});return o;};
+    var js=toObj(xml.documentElement), res=[], seen={};
     var cl=function(v){return String(v==null?"":v).replace(/^0+$/,"");};
+    var keyOf=function(o,re){var r=null;Object.keys(o).forEach(function(k){if(re.test(k)&&typeof o[k]!=="object")r=k;});return r;};
     (function walk(o,cur,kd,d){
-      if(!o||typeof o!=="object"||d>14)return;
+      if(!o||typeof o!=="object"||d>16)return;
       if(Array.isArray(o)){o.forEach(function(x){walk(x,cur,kd,d+1);});return;}
-      var c=cur,k=kd;
-      if(o["조문번호"]!=null&&!("위임법령조문번호" in o)){var nb=artNo(o["조문번호"]);c={no:nb.no,br:cl(o["조문가지번호"]!=null?o["조문가지번호"]:nb.br)};}
+      var c=cur,k=kd, tk=keyOf(o,/^위임.*조문번호$/);
+      if(o["조문번호"]!=null&&typeof o["조문번호"]!=="object"&&!tk){var nb=artNo(o["조문번호"]);c={no:nb.no,br:cl(o["조문가지번호"]!=null?o["조문가지번호"]:nb.br)};}
       var g=o["위임구분"]||o["위임법령구분"]; if(typeof g==="string"&&g)k=g;
-      if("위임법령조문번호" in o&&c){var tn=artNo(o["위임법령조문번호"]),br=cl(o["위임법령조문가지번호"]!=null?o["위임법령조문가지번호"]:tn.br),key=c.no+"/"+c.br+">"+tn.no+"/"+br+"/"+k;
+      if(tk&&c){var tn=artNo(o[tk]),gk=keyOf(o,/^위임.*가지번호$/),br=cl(gk?o[gk]:tn.br),key=c.no+"/"+c.br+">"+tn.no+"/"+br+"/"+k;
         if(!seen[key]){seen[key]=1;res.push({from:c,kind:k,no:tn.no,br:br});}}
       Object.keys(o).forEach(function(key){if(o[key]&&typeof o[key]==="object")walk(o[key],c,k,d+1);});
     })(js,null,"",0);
