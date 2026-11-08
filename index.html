@@ -1387,5 +1387,17 @@ document.getElementById("btn-reset").addEventListener("click", () => {
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+<script>/*mobile-fontfix-js*/
+(function(){try{if(!window.matchMedia||!matchMedia('(max-width:640px)').matches)return;var MIN=14;
+function fix(root){var list=[];if(root.nodeType!==1)return;list.push(root);var q=root.querySelectorAll('*');for(var i=0;i<q.length;i++)list.push(q[i]);
+for(var j=0;j<list.length;j++){var e=list[j];if(e.__mf||/^(SCRIPT|STYLE|SVG|CANVAS|PATH|G|LINE|RECT|CIRCLE|TEXT|TSPAN)$/i.test(e.tagName))continue;var has=false;for(var n=e.firstChild;n;n=n.nextSibling){if(n.nodeType===3&&n.nodeValue.trim()){has=true;break}}
+if(!has)continue;e.__mf=1;var f=parseFloat(getComputedStyle(e).fontSize);if(f>0&&f<MIN)e.style.setProperty('font-size',MIN+'px','important')}}
+function run(){fix(document.body)}
+var t=null;function later(){clearTimeout(t);t=setTimeout(run,300)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+window.addEventListener('load',run);
+new MutationObserver(later).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+}catch(e){}})();
+</script>
 </body>
 </html>
